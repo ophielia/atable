@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  listshop-configmap
+data:
+  db.host: localhost
+  db.name: listshop

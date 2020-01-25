@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name:  listshop-configmap
+  name:  listshop-dev-configmap
 data:
-  db.host: localhost
+  db.host: yippee-ky-a
   db.name: listshop

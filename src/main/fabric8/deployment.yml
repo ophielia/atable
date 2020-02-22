@@ -10,12 +10,12 @@ spec:
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: yippee-ky-a-secrets
+                  name: most-serious
                   key: DB_USER
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: yippee-ky-a-secrets
+                  name: most-serious
                   key: DB_PASSWORD
             - name: DB_HOST
               valueFrom:

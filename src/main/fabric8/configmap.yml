@@ -5,3 +5,4 @@ metadata:
 data:
   db.host: yippee-ky-a
   db.name: listshop
+  db.port: 5432

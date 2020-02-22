@@ -20,17 +20,17 @@ spec:
             - name: DB_HOST
               valueFrom:
                 configMapKeyRef:
-                  name: listshop-configmap
+                  name: listshop-dev-configmap
                   key: db.host
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
-                  name: listshop-configmap
+                  name: listshop-dev-configmap
                   key: db.port
             - name: DB_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: listshop-configmap
+                  name: listshop-dev-configmap
                   key: db.name
             - name: JAVA_OPTIONS
               value: "-Dspring.profiles.active=openshift"

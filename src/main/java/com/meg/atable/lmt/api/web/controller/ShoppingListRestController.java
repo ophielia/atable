@@ -7,7 +7,6 @@ import com.meg.atable.lmt.api.model.*;
 import com.meg.atable.lmt.data.entity.ItemEntity;
 import com.meg.atable.lmt.data.entity.ListLayoutCategoryEntity;
 import com.meg.atable.lmt.data.entity.ShoppingListEntity;
-import com.meg.atable.lmt.data.entity.TagEntity;
 import com.meg.atable.lmt.service.ListLayoutService;
 import com.meg.atable.lmt.service.ShoppingListException;
 import com.meg.atable.lmt.service.ShoppingListService;
@@ -48,7 +47,8 @@ public class ShoppingListRestController implements ShoppingListRestControllerApi
     private ListLayoutService listLayoutService;
 
     public ResponseEntity<Resources<ShoppingListResource>> retrieveLists(Principal principal) {
-
+        String message = String.format("Retrieving all lists for user [%S]", principal.getName());
+        logger.info(message);
         List<ShoppingListResource> shoppingListResources = shoppingListService
                 .getListsByUsername(principal.getName())
                 .stream()
@@ -60,13 +60,14 @@ public class ShoppingListRestController implements ShoppingListRestControllerApi
 
     @Override
     public ResponseEntity<Object> createList(Principal principal, @RequestBody ListGenerateProperties listGenerateProperties) {
-
+        String message = String.format("Creating list for user [%S]", principal.getName());
+        logger.info(message);
 
         ShoppingListEntity result = null;
         try {
             result = shoppingListService.generateListForUser(principal.getName(), listGenerateProperties);
         } catch (ShoppingListException e) {
-            logger.error("Exception while creating List.",e);
+            logger.error("Exception while creating List.", e);
         }
         if (result != null) {
             Link oneList = new ShoppingListResource(result, null).getLink("self");
@@ -77,6 +78,8 @@ public class ShoppingListRestController implements ShoppingListRestControllerApi
 
     @Override
     public ResponseEntity<MergeResultResource> mergeList(Principal principal, @RequestBody MergeRequest mergeRequest) {
+        String message = String.format("Merging list for user [%S]", principal.getName());
+        logger.info(message);
 
         Long listId = mergeRequest.getListId();
         Long layoutId = mergeRequest.getLayoutId();
@@ -88,7 +91,7 @@ public class ShoppingListRestController implements ShoppingListRestControllerApi
             // retrieve the list, and put it into the result
             ShoppingListEntity shoppingList = this.shoppingListService.getListById(principal.getName(), listId);
             // possibly set layout id in shopping list
-            if (layoutId != null && layoutId != shoppingList.getListLayoutId()) {
+            if (layoutId != null && !layoutId.equals(shoppingList.getListLayoutId())) {
                 shoppingList.setListLayoutId(layoutId);
             }
             List<Category> categories = shoppingListService.categorizeList(principal.getName(), shoppingList, null, false, null);
@@ -105,6 +108,9 @@ public class ShoppingListRestController implements ShoppingListRestControllerApi
     public ResponseEntity<List<ListItemRefreshResource>> refreshListItems(Principal principal, @PathVariable("listLayoutId") Long listLayoutId,
                                                                           @RequestParam(value = "after", required = true)
                                                                           @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date changedAfter) {
+        String message = String.format("Refreshing list ites for user [%S]", principal.getName());
+        logger.info(message);
+
         List<ItemEntity> changedItems = shoppingListService.getChangedItemsForMostRecentList(principal.getName(), changedAfter, listLayoutId);
 
         List<Pair<ItemEntity, ListLayoutCategoryEntity>> itemsToCategories = listLayoutService.getItemChangesWithCategories(listLayoutId, changedItems);
@@ -133,7 +139,8 @@ public class ShoppingListRestController implements ShoppingListRestControllerApi
 
     @Override
     public ResponseEntity<Object> updateItems(Principal principal, @PathVariable("listId") Long listId, @RequestBody ItemOperationPut itemOperation) {
-        logger.debug("beginning updateItems for input: " + itemOperation);
+        String message = String.format("beginning updateItems for input: %S", itemOperation);
+        logger.debug(message);
         if (itemOperation == null) {
             return ResponseEntity.badRequest().build();
         }
@@ -184,10 +191,7 @@ public class ShoppingListRestController implements ShoppingListRestControllerApi
         if (highlightDish == 0) {
             highlightDish = null;
         }
-        //MM debug only
-        List<ItemEntity> items = result.getItems();
-        List<Long> tempids = items.stream().map(ItemEntity::getTag).map(TagEntity::getId).collect(Collectors.toList());
-        logger.debug("tagIds are: " + tempids);
+
         List<Category> categories = shoppingListService.categorizeList(principal.getName(), result, highlightDish, showPantry, highlightListId);
         shoppingListService.fillSources(result);
         return singleResult(result, categories);
@@ -209,6 +213,16 @@ public class ShoppingListRestController implements ShoppingListRestControllerApi
 
         this.shoppingListService.addItemToList(principal.getName(), listId, itemEntity);
 
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Object> updateItemCountByTag(Principal principal, @PathVariable Long listId,
+                                                       @PathVariable Long tagId,
+                                                       @PathVariable Integer usedCount
+    ) {
+        logger.info("Update count for tag [%d] to [%d] in list [%d]", tagId, usedCount, listId);
+        this.shoppingListService.updateItemCount(principal.getName(), listId, tagId, usedCount);
         return ResponseEntity.noContent().build();
     }
 

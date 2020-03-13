@@ -1,10 +1,12 @@
 package com.meg.atable.lmt.api.model;
 
 import com.meg.atable.auth.api.model.User;
+import com.meg.atable.auth.data.entity.AuthorityEntity;
 import com.meg.atable.auth.data.entity.UserEntity;
 import com.meg.atable.common.FlatStringUtils;
 import com.meg.atable.common.StringTools;
 import com.meg.atable.lmt.data.entity.*;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.*;
 
@@ -29,12 +31,28 @@ public class ModelMapper {
         return new Dish();
     }
 
-    public static User toModel(UserEntity userEntity) {
+    public static User toModel(UserEntity userEntity, String token) {
         if (userEntity != null) {
+            String[] roles = toRoleListModel(userEntity.getAuthorities());
             return new User(userEntity.getUsername(), userEntity.getEmail())
-                    .creationDate(userEntity.getCreationDate());
+                    .creationDate(userEntity.getCreationDate())
+                    .token(token)
+                    .roles(roles);
         }
         return new User(null, null);
+    }
+
+
+
+    private static String[] toRoleListModel(List<AuthorityEntity> authorities) {
+        List<String> roleList = new ArrayList<>();
+        if (authorities == null || authorities.isEmpty()) {
+            return new String[0];
+        }
+        for (AuthorityEntity authority : authorities) {
+            roleList.add(authority.getName().name());
+        }
+        return roleList.toArray(new String[roleList.size()]);
     }
 
     public static Dish toModel(DishEntity dishEntity, List<TagEntity> tagEntities) {
@@ -425,14 +443,15 @@ public class ModelMapper {
                 .removed(itemEntity.getRemovedOn())
                 .crossedOff(itemEntity.getCrossedOff())
                 .usedCount(itemEntity.getUsedCount())
-                .freeText(itemEntity.getFreeText());
+                .freeText(itemEntity.getFreeText())
+                .handles(itemEntity.getHandles());
     }
 
     public static TagEntity toEntity(Tag tag) {
         if (tag == null) {
             return null;
         }
-        Long tagId = tag.getId() != null ? new Long(tag.getId()) : null;
+        Long tagId = tag.getId() != null ? Long.valueOf(tag.getId()) : null;
         TagEntity tagEntity = new TagEntity(tagId);
 
         tagEntity.setName(tag.getName().trim());
@@ -495,13 +514,13 @@ public class ModelMapper {
         if (mealPlan == null) {
             return null;
         }
-        Long mealPlanId = (mealPlan != null && mealPlan.getMealPlanId() != null) ? mealPlan.getMealPlanId() : null;
+        Long mealPlanId = (mealPlan.getMealPlanId() != null) ? mealPlan.getMealPlanId() : null;
         MealPlanEntity mealPlanEntity = new MealPlanEntity(mealPlanId);
 
         mealPlanEntity.setName(mealPlan.getName());
         mealPlanEntity.setMealPlanType(MealPlanType.valueOf(mealPlan.getMealPlanType()));
         if (mealPlan.getUserId() != null) {
-            mealPlanEntity.setUserId(new Long(mealPlan.getUserId()));
+            mealPlanEntity.setUserId(Long.valueOf(mealPlan.getUserId()));
         }
 
         return mealPlanEntity;

@@ -161,7 +161,7 @@ public class ShoppingListServiceImpl implements ShoppingListService {
             CollectorContext context = new CollectorContextBuilder().create(ContextType.List)
                     .withListId(sourceListId)
                     .withRemoveEntireItem(true)
-                    .withStatisticCountType(StatisticCountType.None)
+                    .withStatisticCountType(StatisticCountType.Single)
                     .build();
             ListItemCollector collector = createListItemCollector(destinationListId, items);
             collector.addTags(tagList, context);
@@ -177,7 +177,8 @@ public class ShoppingListServiceImpl implements ShoppingListService {
 
             List<ItemEntity> items = sourceList.getItems();
             CollectorContext context = new CollectorContextBuilder().create(ContextType.NonSpecified)
-                    .withStatisticCountType(StatisticCountType.Single).build();
+                    .withStatisticCountType(StatisticCountType.Single)
+                    .withRemoveEntireItem(true).build();
             ListItemCollector collector = createListItemCollector(sourceListId, items);
             collector.removeItemsByTagIds(tagIds, context);
             saveListChanges(sourceList, collector, context);
@@ -369,34 +370,6 @@ public class ShoppingListServiceImpl implements ShoppingListService {
         return false;
     }
 
-    @Override
-    public void addItemToList(String name, Long listId, ItemEntity itemEntity) {
-        ShoppingListEntity shoppingListEntity = getListById(name, listId);
-        if (shoppingListEntity == null) {
-            return;
-        }
-
-        List<ItemEntity> items = shoppingListEntity.getItems();
-        ListItemCollector collector = createListItemCollector(listId, items);
-        // fill in tag, if item contains tag
-        TagEntity tag = null;
-        if (itemEntity.getTagId() != null) {
-            tag = tagService.getTagById(itemEntity.getTagId());
-            itemEntity.setTag(tag);
-        }
-        if (tag == null && itemEntity.getTag().getId() != null) {
-            tag = tagService.getTagById(itemEntity.getTag().getId());
-            itemEntity.setTag(tag);
-        }
-        CollectorContext context = new CollectorContextBuilder().create(ContextType.NonSpecified)
-                .withStatisticCountType(StatisticCountType.Single)
-                .withListId(listId)
-                .build();
-        collector.addItem(itemEntity, context);
-
-        saveListChanges(shoppingListEntity, collector, context);
-    }
-
     public void addItemToListByTag(String name, Long listId, Long tagId) {
         ShoppingListEntity shoppingListEntity = getListById(name, listId);
         if (shoppingListEntity == null) {
@@ -543,7 +516,6 @@ public class ShoppingListServiceImpl implements ShoppingListService {
         // create the collector
         ListItemCollector collector = createListItemCollector(shoppingList.getId(), shoppingList.getItems());
 
-
         // add all tags for meal plan
         List<TagType> tagTypeList = new ArrayList<>();
         tagTypeList.add(TagType.Ingredient);
@@ -599,15 +571,20 @@ public class ShoppingListServiceImpl implements ShoppingListService {
         });
 
         // split out items into special categories
-        Map<CategoryType, ItemCategory> specialCategories = generateSpecialCategories(userName,shoppingListEntity,
+        Map<CategoryType, ItemCategory> specialCategories = generateSpecialCategories(userName, shoppingListEntity,
                 filledCategories,
                 dictionary,
                 highlightDishId,
                 showPantry,
                 highlightListId);
 
+        // add frequent and uncategorized
+        addCategoryIfNotEmpty(filledCategories, specialCategories.get(CategoryType.Frequent));
+        addCategoryIfNotEmpty(filledCategories, specialCategories.get(CategoryType.UnCategorized));
+        addCategoryIfNotEmpty(filledCategories, specialCategories.get(CategoryType.Highlight));
+        addCategoryIfNotEmpty(filledCategories, specialCategories.get(CategoryType.HighlightList));
 
-        // sort items in filled categories
+        // sort items in filled categories - content sort
         for (Map.Entry entry : filledCategories.entrySet()) {
             ((ItemCategory) entry.getValue()).sortItems();
         }
@@ -615,13 +592,7 @@ public class ShoppingListServiceImpl implements ShoppingListService {
         // structure categories
         listLayoutService.structureCategories(filledCategories, shoppingListEntity.getListLayoutId(), true);
 
-        // add frequent and uncategorized
-        addCategoryIfNotEmpty(filledCategories,specialCategories.get(CategoryType.Frequent));
-        addCategoryIfNotEmpty(filledCategories,specialCategories.get(CategoryType.UnCategorized));
-        addCategoryIfNotEmpty(filledCategories,specialCategories.get(CategoryType.Highlight));
-        addCategoryIfNotEmpty(filledCategories,specialCategories.get(CategoryType.HighlightList));
-
-        // prune and sort categories
+        // prune and sort categories - sorts the categories themselves, not the contents
         return cleanUpResults(filledCategories);
     }
 

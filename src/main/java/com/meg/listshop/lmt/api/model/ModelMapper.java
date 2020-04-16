@@ -59,6 +59,7 @@ public class ModelMapper {
         return new Dish(dishEntity.getId())
                 .description(dishEntity.getDescription())
                 .dishName(dishEntity.getDishName())
+                .reference(dishEntity.getReference())
                 .tags(tags)
                 .lastAdded(dishEntity.getLastAdded())
                 .userId(dishEntity.getUserId());
@@ -390,6 +391,12 @@ public class ModelMapper {
 
         List<Category> categories = itemCategoriesToModel(itemCategories, dishSourceDictionary, listSourceDictionary);
 
+        long itemCount = 0;
+        if (shoppingListEntity.getItems() != null) {
+            itemCount = shoppingListEntity.getItems().stream()
+                    .filter(item -> item.getRemovedOn() == null && item.getCrossedOff() == null)
+                    .count();
+        }
         return new ShoppingList(shoppingListEntity.getId())
                 .createdOn(shoppingListEntity.getCreatedOn())
                 .categories(categories)
@@ -399,7 +406,7 @@ public class ModelMapper {
                 .listSources(listSources)
                 .layoutId(String.valueOf(shoppingListEntity.getListLayoutId()))
                 .updated(shoppingListEntity.getLastUpdate())
-                .itemCount(shoppingListEntity.getItems() != null ? shoppingListEntity.getItems().size() : 0)
+                .itemCount((int) itemCount)
                 .userId(shoppingListEntity.getUserId());
 
     }
@@ -444,6 +451,19 @@ public class ModelMapper {
                 .usedCount(itemEntity.getUsedCount())
                 .freeText(itemEntity.getFreeText())
                 .handles(itemEntity.getHandles());
+    }
+
+    public static DishEntity toEntity(Dish dish) {
+        if (dish == null) {
+            return null;
+        }
+        Long dishId = dish.getId() != null ? Long.valueOf(dish.getId()) : null;
+        DishEntity dishEntity = new DishEntity(dishId, dish.getDishName());
+
+        dishEntity.setReference(dish.getReference());
+        dishEntity.setUserId(dish.getUserId());
+        dishEntity.setDescription(dish.getDescription());
+        return dishEntity;
     }
 
     public static TagEntity toEntity(Tag tag) {

@@ -10,7 +10,7 @@ import com.meg.listshop.lmt.data.entity.ShoppingListEntity;
 import com.meg.listshop.lmt.service.ListLayoutService;
 import com.meg.listshop.lmt.service.ShoppingListException;
 import com.meg.listshop.lmt.service.ShoppingListService;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -205,15 +205,6 @@ public class ShoppingListRestController implements ShoppingListRestControllerApi
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.badRequest().build();
-    }
-
-    @Override
-    public ResponseEntity<Object> addItemToList(Principal principal, @PathVariable Long listId, @RequestBody Item input) {
-        ItemEntity itemEntity = ModelMapper.toEntity(input);
-
-        this.shoppingListService.addItemToList(principal.getName(), listId, itemEntity);
-
-        return ResponseEntity.noContent().build();
     }
 
     @Override

@@ -23,6 +23,10 @@ public class CollectedItem {
 
     private boolean isAdded;
 
+    private boolean isCountAdded;
+
+    private boolean isCountDecreased;
+
     private boolean isChanged;
     private boolean fromClient = false;
 
@@ -31,6 +35,7 @@ public class CollectedItem {
 
     public CollectedItem(ItemEntity itemEntity) {
         item = itemEntity;
+        isRemoved = item.getRemovedOn() != null;
     }
     
     //** Item Accessors **/
@@ -75,12 +80,24 @@ public class CollectedItem {
         this.item.setListId(listId);
     }
 
+    public boolean isCountAdded() {
+        return isCountAdded;
+    }
+
+    public boolean isCountDecreased() {
+        return isCountDecreased;
+    }
+
     public Integer getUsedCount() {
         return item.getUsedCount();
     }
 
     public void setUsedCount(Integer usedCount) {
+        boolean countIncrease = this.item.getUsedCount() != null && this.item.getUsedCount() < usedCount;
+        boolean countDecrease = this.item.getUsedCount() != null && this.item.getUsedCount() > usedCount;
         this.item.setUsedCount(usedCount);
+        this.isCountAdded = countIncrease;
+        this.isCountDecreased = countDecrease;
     }
 
     public LocalDateTime getAddedOn() {
@@ -408,6 +425,9 @@ public class CollectedItem {
         if (isRemoved()) {
             setRemoved(false);
             setUpdated(true);
+            item.setRawDishSources(null);
+            item.setRawListSources(null);
+            setUsedCount(0);
         }
 
     }
